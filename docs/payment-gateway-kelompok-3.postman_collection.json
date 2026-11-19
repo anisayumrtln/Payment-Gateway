@@ -1,0 +1,229 @@
+{
+  "info": {
+    "_postman_id": "c3e98124-789a-4e2b-91bb-kl3paymentgw",
+    "name": "Payment Gateway Midtrans - Kelompok 3 (Anisa & Saffana)",
+    "description": "Koleksi Postman resmi untuk pengujian dan integrasi modul Payment Gateway (Midtrans Snap Sandbox) Kelompok 3 dengan Kelompok 1 (Order), Kelompok 2 (User/Auth), dan Kelompok 5 (Frontend).",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://localhost:5001/api",
+      "type": "string"
+    },
+    {
+      "key": "bearer_token",
+      "value": "token-kelompok-2-secret-2026",
+      "type": "string"
+    },
+    {
+      "key": "order_id",
+      "value": "ORDER-20261118-KL3-094",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "1. Buat Snap Token Pembayaran",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{bearer_token}}",
+            "type": "text"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"order_id\": \"{{order_id}}\",\n  \"gross_amount\": 250000,\n  \"customer_details\": {\n    \"first_name\": \"Ahmad\",\n    \"last_name\": \"Fauzi\",\n    \"email\": \"ahmad.fauzi@example.com\",\n    \"phone\": \"081234567890\"\n  },\n  \"item_details\": [\n    {\n      \"id\": \"MODUL-01\",\n      \"name\": \"Modul Pembelajaran Fullstack Web\",\n      \"price\": 195000,\n      \"quantity\": 1\n    },\n    {\n      \"id\": \"CERT-02\",\n      \"name\": \"Sertifikat Digital & Lisensi API\",\n      \"price\": 50000,\n      \"quantity\": 1\n    },\n    {\n      \"id\": \"FEE-01\",\n      \"name\": \"Biaya Layanan & Transaksi\",\n      \"price\": 5000,\n      \"quantity\": 1\n    }\n  ]\n}"
+        },
+        "url": {
+          "raw": "{{base_url}}/midtrans-token",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "midtrans-token"
+          ]
+        },
+        "description": "Endpoint yang dipanggil oleh Kelompok 1 (Order) atau Kelompok 5 (Frontend) untuk menghasilkan Midtrans Snap Token. Membutuhkan Bearer Token dari Kelompok 2."
+      },
+      "response": [
+        {
+          "name": "201 Created (Token Berhasil Dibuat)",
+          "originalRequest": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{bearer_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"order_id\": \"ORDER-20261118-KL3-094\",\n  \"gross_amount\": 250000\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/midtrans-token"
+            }
+          },
+          "status": "Created",
+          "code": 201,
+          "_postman_previewlanguage": "json",
+          "header": [
+            {
+              "key": "Content-Type",
+              "value": "application/json; charset=utf-8"
+            }
+          ],
+          "body": "{\n  \"success\": true,\n  \"message\": \"Midtrans Snap Token berhasil dibuat\",\n  \"data\": {\n    \"order_id\": \"ORDER-20261118-KL3-094\",\n    \"gross_amount\": 250000,\n    \"token\": \"mock-snap-fef00526-b933-4b36-a518-e24c4568e2f8\",\n    \"redirect_url\": \"https://app.sandbox.midtrans.com/snap/v2/vtweb/mock-snap-fef00526-b933-4b36-a518-e24c4568e2f8\",\n    \"is_mock\": true\n  }\n}"
+        }
+      ]
+    },
+    {
+      "name": "2. Webhook Notifikasi Midtrans",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"order_id\": \"{{order_id}}\",\n  \"status_code\": \"200\",\n  \"gross_amount\": \"250000.00\",\n  \"signature_key\": \"mock-signature-valid\",\n  \"transaction_status\": \"settlement\",\n  \"payment_type\": \"qris\",\n  \"transaction_id\": \"TRX-MIDTRANS-998811\",\n  \"settlement_time\": \"2026-11-18 20:15:00\"\n}"
+        },
+        "url": {
+          "raw": "{{base_url}}/midtrans-webhook",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "midtrans-webhook"
+          ]
+        },
+        "description": "Endpoint HTTP Notification yang dipanggil oleh server Midtrans. Memverifikasi signature SHA512 dan mengupdate status transaksi di database `payments`."
+      },
+      "response": [
+        {
+          "name": "200 OK (Notifikasi Berhasil Diproses)",
+          "originalRequest": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"order_id\": \"ORDER-20261118-KL3-094\",\n  \"status_code\": \"200\",\n  \"gross_amount\": \"250000.00\",\n  \"signature_key\": \"mock-signature-valid\",\n  \"transaction_status\": \"settlement\",\n  \"payment_type\": \"qris\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/midtrans-webhook"
+            }
+          },
+          "status": "OK",
+          "code": 200,
+          "_postman_previewlanguage": "json",
+          "header": [
+            {
+              "key": "Content-Type",
+              "value": "application/json; charset=utf-8"
+            }
+          ],
+          "body": "{\n  \"success\": true,\n  \"message\": \"Notifikasi webhook Midtrans berhasil diproses\",\n  \"data\": {\n    \"order_id\": \"ORDER-20261118-KL3-094\",\n    \"transaction_status\": \"success\",\n    \"payment_type\": \"qris\"\n  }\n}"
+        }
+      ]
+    },
+    {
+      "name": "3. Cek Status Transaksi di Database",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{bearer_token}}",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "{{base_url}}/payments/{{order_id}}",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "payments",
+            "{{order_id}}"
+          ]
+        },
+        "description": "Mengambil detail pembayaran dari database `payments` berdasarkan order_id. Memerlukan Bearer Token dari Kelompok 2."
+      },
+      "response": [
+        {
+          "name": "200 OK (Detail Transaksi Ditemukan)",
+          "originalRequest": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{bearer_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/payments/ORDER-20261118-KL3-094"
+            }
+          },
+          "status": "OK",
+          "code": 200,
+          "_postman_previewlanguage": "json",
+          "header": [
+            {
+              "key": "Content-Type",
+              "value": "application/json; charset=utf-8"
+            }
+          ],
+          "body": "{\n  \"success\": true,\n  \"data\": {\n    \"id\": 1,\n    \"order_id\": \"ORDER-20261118-KL3-094\",\n    \"transaction_id\": \"TRX-MIDTRANS-998811\",\n    \"gross_amount\": 250000,\n    \"payment_type\": \"qris\",\n    \"transaction_status\": \"success\",\n    \"customer_name\": \"Ahmad Fauzi\",\n    \"customer_email\": \"ahmad.fauzi@example.com\",\n    \"payment_time\": \"2026-11-18 20:15:00\",\n    \"updated_at\": \"2026-11-18T15:25:00.000Z\"\n  }\n}"
+        }
+      ]
+    },
+    {
+      "name": "4. Health Check Server",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/health",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "health"
+          ]
+        },
+        "description": "Pemeriksaan status server backend Payment Gateway (bebas akses tanpa autentikasi)."
+      },
+      "response": [
+        {
+          "name": "200 OK (Server Aktif)",
+          "status": "OK",
+          "code": 200,
+          "_postman_previewlanguage": "json",
+          "body": "{\n  \"status\": \"OK\",\n  \"service\": \"Payment Gateway Midtrans - Kelompok 3 (Anisa & Saffana)\",\n  \"uptime\": 120.45,\n  \"timestamp\": \"2026-11-18T15:30:00.000Z\"\n}"
+        }
+      ]
+    }
+  ]
+}
